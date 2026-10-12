@@ -1,0 +1,557 @@
+/*
+ * PORTFOLIO SECTION — Alen Danilina Portfolio
+ * Design: Masonry-style grid, large images, generous whitespace
+ * Featured tab: shows one representative image per category; clicking opens that category
+ * Category tabs: show all images in that category
+ */
+
+import { useLanguage } from '@/contexts/LanguageContext';
+import { useReveal } from '@/hooks/useReveal';
+import { useState, useEffect, useRef, useCallback } from 'react';
+
+interface ImageItem {
+  src: string;
+  alt: string;
+  category: { en: string; ru: string };
+  aspect: string;
+  span: string;
+  isPreview?: boolean; // marks the representative image for "featured" view
+  objectPosition?: string; // custom object-position for cropping
+}
+
+const IMAGES: ImageItem[] = [
+  // === PORTRAIT ===
+  {
+    src: '/photos/0000267_d264ad8c.webp',
+    alt: 'Portrait — girl at window profile',
+    category: { en: 'Portrait', ru: 'Портрет' },
+    aspect: '3/4',
+    span: 'row-span-2',
+    isPreview: true,
+  },
+  {
+    src: '/photos/305C0932_de765cbd.webp',
+    alt: 'Portrait — freckles, natural light',
+    category: { en: 'Portrait', ru: 'Портрет' },
+    aspect: '3/4',
+    span: '',
+  },
+  {
+    src: '/photos/000052_1598e0ed.webp',
+    alt: 'Portrait — girl on sofa, warm light',
+    category: { en: 'Portrait', ru: 'Портрет' },
+    aspect: '3/4',
+    span: '',
+  },
+  {
+    src: '/photos/000021_ffe8bb51.webp',
+    alt: 'Portrait — natural smile, plants background',
+    category: { en: 'Portrait', ru: 'Портрет' },
+    aspect: '3/4',
+    span: '',
+  },
+  {
+    src: '/photos/000028_c42afaac.webp',
+    alt: 'Portrait — blue sweater, wooden floor',
+    category: { en: 'Portrait', ru: 'Портрет' },
+    aspect: '3/4',
+    span: '',
+  },
+  {
+    src: '/photos/000032_53a58127.webp',
+    alt: 'Portrait — blue sweater & flowing skirt',
+    category: { en: 'Portrait', ru: 'Портрет' },
+    aspect: '3/4',
+    span: '',
+  },
+  {
+    src: '/photos/000023_7979624f.webp',
+    alt: 'Portrait — sequin top, golden light',
+    category: { en: 'Portrait', ru: 'Портрет' },
+    aspect: '3/4',
+    span: '',
+    objectPosition: 'center 20%',
+  },
+  {
+    src: '/photos/305C0570_24e4db09.webp',
+    alt: 'Portrait — dark coat, profile shot',
+    category: { en: 'Portrait', ru: 'Портрет' },
+    aspect: '3/4',
+    span: '',
+  },
+
+  // === MODEL TESTS ===
+  {
+    src: '/photos/IMG_1758_56bda2f1.JPG',
+    alt: 'Model Tests — chandelier & white dress on sofa',
+    category: { en: 'Model Tests', ru: 'Модельные тесты' },
+    aspect: '3/4',
+    span: '',
+    isPreview: true,
+  },
+  {
+    src: '/photos/IMG_1759_09a963bd.JPG',
+    alt: 'Model Tests — girl on floral sofa with flowers',
+    category: { en: 'Model Tests', ru: 'Модельные тесты' },
+    aspect: '3/4',
+    span: '',
+  },
+  {
+    src: '/photos/305C0648_1ff864a9.webp',
+    alt: 'Model Tests — yellow light, silhouette',
+    category: { en: 'Model Tests', ru: 'Модельные тесты' },
+    aspect: '3/4',
+    span: '',
+  },
+  {
+    src: '/photos/305C1144_e669f7e6.webp',
+    alt: 'Model Tests — flowing dress, movement',
+    category: { en: 'Model Tests', ru: 'Модельные тесты' },
+    aspect: '3/4',
+    span: '',
+  },
+  {
+    src: '/photos/Scan-18_20e2ac6d.webp',
+    alt: 'Model Tests — polaroid, black outfit',
+    category: { en: 'Model Tests', ru: 'Модельные тесты' },
+    aspect: '3/4',
+    span: '',
+  },
+  {
+    src: '/photos/Scan-1333_1868298f.webp',
+    alt: 'Model Tests — double polaroid',
+    category: { en: 'Model Tests', ru: 'Модельные тесты' },
+    aspect: '3/4',
+    span: '',
+  },
+  {
+    src: '/photos/305C0688-1_8692edc1.webp',
+    alt: 'Model Tests — sitting on vintage trunk',
+    category: { en: 'Model Tests', ru: 'Модельные тесты' },
+    aspect: '3/4',
+    span: '',
+    objectPosition: 'center 25%',
+  },
+  {
+    src: '/photos/305C0797_0b9981c4.webp',
+    alt: 'Model Tests — yellow light, arms up',
+    category: { en: 'Model Tests', ru: 'Модельные тесты' },
+    aspect: '3/4',
+    span: '',
+  },
+  {
+    src: '/photos/305C0262_c5d82adf.webp',
+    alt: 'Model Tests — black blazer, neutral background',
+    category: { en: 'Model Tests', ru: 'Модельные тесты' },
+    aspect: '3/4',
+    span: '',
+  },
+  {
+    src: '/photos/IMG_1766_4783e032.JPG',
+    alt: 'Model Tests — white dress, flowers, sofa',
+    category: { en: 'Model Tests', ru: 'Модельные тесты' },
+    aspect: '3/4',
+    span: '',
+  },
+
+  // === COUPLES ===
+  {
+    src: '/photos/52_0c758678.webp',
+    alt: 'Couples — casual street moment with drinks',
+    category: { en: 'Couples', ru: 'Пары' },
+    aspect: '3/4',
+    span: 'row-span-2',
+    isPreview: true,
+  },
+  {
+    src: '/photos/dNBmVp-QWVo_88459ed7.webp',
+    alt: 'Couples — elegant moment at terrace',
+    category: { en: 'Couples', ru: 'Пары' },
+    aspect: '3/4',
+    span: '',
+  },
+  {
+    src: '/photos/3S6yy4oN4YY_3f60394b.webp',
+    alt: 'Couples — urban black and white',
+    category: { en: 'Couples', ru: 'Пары' },
+    aspect: '3/4',
+    span: '',
+  },
+  {
+    src: '/photos/305C1429_20d3513d.webp',
+    alt: 'Couples — intimate bedroom moment',
+    category: { en: 'Couples', ru: 'Пары' },
+    aspect: '3/4',
+    span: '',
+  },
+  {
+    src: '/photos/305C1457_b127818f.webp',
+    alt: 'Couples — intimate moment with books',
+    category: { en: 'Couples', ru: 'Пары' },
+    aspect: '3/4',
+    span: '',
+  },
+  {
+    src: '/photos/305C0642_0f7acd5e.webp',
+    alt: 'Couples — elegant dinner',
+    category: { en: 'Couples', ru: 'Пары' },
+    aspect: '3/4',
+    span: '',
+  },
+  {
+    src: '/photos/305C0412_436fb26d.webp',
+    alt: 'Couples — night street elegance',
+    category: { en: 'Couples', ru: 'Пары' },
+    aspect: '3/4',
+    span: '',
+  },
+  {
+    src: '/photos/305C0821_4fb37a29.webp',
+    alt: 'Couples — urban stairs',
+    category: { en: 'Couples', ru: 'Пары' },
+    aspect: '3/4',
+    span: '',
+  },
+  {
+    src: '/photos/305C0761_33cd9593.webp',
+    alt: 'Couples — architectural courtyard',
+    category: { en: 'Couples', ru: 'Пары' },
+    aspect: '3/4',
+    span: '',
+  },
+  {
+    src: '/photos/305C0964_c2b5dba2.webp',
+    alt: 'Couples — intimate hallway',
+    category: { en: 'Couples', ru: 'Пары' },
+    aspect: '3/4',
+    span: '',
+  },
+  {
+    src: '/photos/305C0788_5cca4c61.webp',
+    alt: 'Couples — bedroom intimacy',
+    category: { en: 'Couples', ru: 'Пары' },
+    aspect: '3/4',
+    span: '',
+  },
+  {
+    src: '/photos/305C0488_2c48f5fb.webp',
+    alt: 'Couples — seaside balcony view',
+    category: { en: 'Couples', ru: 'Пары' },
+    aspect: '3/4',
+    span: '',
+  },
+  {
+    src: '/photos/305C0228_49a6e7e3.webp',
+    alt: 'Couples — restaurant elegance',
+    category: { en: 'Couples', ru: 'Пары' },
+    aspect: '3/4',
+    span: '',
+  },
+  {
+    src: '/photos/3_4cd6b2a6.webp',
+    alt: 'Couples — close portrait with tattoo',
+    category: { en: 'Couples', ru: 'Пары' },
+    aspect: '3/4',
+    span: '',
+  },
+  {
+    src: '/photos/20_d57553b9.webp',
+    alt: 'Couples — standing on carpet at Kale Antik',
+    category: { en: 'Couples', ru: 'Пары' },
+    aspect: '3/4',
+    span: '',
+  },
+  {
+    src: '/photos/22_b873e2ed.webp',
+    alt: 'Couples — walking hand in hand, Istanbul street',
+    category: { en: 'Couples', ru: 'Пары' },
+    aspect: '3/4',
+    span: '',
+  },
+  {
+    src: '/photos/52_1e80f1bc.webp',
+    alt: 'Couples — drinks by green building corner',
+    category: { en: 'Couples', ru: 'Пары' },
+    aspect: '3/4',
+    span: '',
+  },
+  {
+    src: '/photos/48_defbd2cc.webp',
+    alt: 'Couples — standing by red carpet on gate',
+    category: { en: 'Couples', ru: 'Пары' },
+    aspect: '3/4',
+    span: '',
+  },
+
+  // === FASHION ===
+  {
+    src: '/photos/000014_879d066f.webp',
+    alt: 'Fashion — black dress & fur collar',
+    category: { en: 'Fashion', ru: 'Мода' },
+    aspect: '3/4',
+    span: '',
+    isPreview: true,
+    objectPosition: 'center 20%',
+  },
+  {
+    src: '/photos/000015_0c5486e6.webp',
+    alt: 'Fashion — bold pose & red tights',
+    category: { en: 'Fashion', ru: 'Мода' },
+    aspect: '3/4',
+    span: '',
+  },
+  {
+    src: '/photos/000025_62f55cd2.webp',
+    alt: 'Fashion — fur hood, hands on face',
+    category: { en: 'Fashion', ru: 'Мода' },
+    aspect: '3/4',
+    span: '',
+  },
+  {
+    src: '/photos/305C0229-11_0c067d50.webp',
+    alt: 'Fashion — white blazer with heels',
+    category: { en: 'Fashion', ru: 'Мода' },
+    aspect: '3/4',
+    span: '',
+  },
+  {
+    src: '/photos/305C0184_93dcf650.webp',
+    alt: 'Fashion — white blazer dress, bold shoulders',
+    category: { en: 'Fashion', ru: 'Мода' },
+    aspect: '3/4',
+    span: '',
+  },
+  {
+    src: '/photos/305C0217_93c38b25.webp',
+    alt: 'Fashion — white top on tan sofa',
+    category: { en: 'Fashion', ru: 'Мода' },
+    aspect: '3/4',
+    span: '',
+  },
+  {
+    src: '/photos/DSC06221_31d0457c.webp',
+    alt: 'Fashion — snow, white shearling coat',
+    category: { en: 'Fashion', ru: 'Мода' },
+    aspect: '3/4',
+    span: '',
+  },
+  {
+    src: '/photos/DSC05829-32_1a007cc2.webp',
+    alt: 'Fashion — winter shearling & sunglasses',
+    category: { en: 'Fashion', ru: 'Мода' },
+    aspect: '3/4',
+    span: '',
+  },
+  {
+    src: '/photos/DSC06447_c35ab7fd.webp',
+    alt: 'Fashion — snow, sitting in leather jacket',
+    category: { en: 'Fashion', ru: 'Мода' },
+    aspect: '3/4',
+    span: '',
+  },
+  {
+    src: '/photos/Untitled-(3)-(4)_2ef21731.webp',
+    alt: 'Fashion — polaroid, beach sunset',
+    category: { en: 'Fashion', ru: 'Мода' },
+    aspect: '3/4',
+    span: '',
+  },
+  {
+    src: '/photos/13_f7dbe984.webp',
+    alt: 'Fashion — green suit at harbor',
+    category: { en: 'Fashion', ru: 'Мода' },
+    aspect: '3/4',
+    span: '',
+  },
+  {
+    src: '/photos/9_aa31d404.webp',
+    alt: 'Fashion — green blazer by water, hat',
+    category: { en: 'Fashion', ru: 'Мода' },
+    aspect: '3/4',
+    span: '',
+  },
+];
+
+const CATEGORIES_EN = ['featured', 'Couples', 'Fashion', 'Portrait', 'Model Tests'];
+const CATEGORIES_RU = ['избранное', 'Пары', 'Мода', 'Портрет', 'Модельные тесты'];
+
+export default function PortfolioSection() {
+  const { t, lang } = useLanguage();
+  const ref = useReveal();
+  const [activeCategory, setActiveCategory] = useState(0);
+  const gridRef = useRef<HTMLDivElement>(null);
+
+  const categories = lang === 'en' ? CATEGORIES_EN : CATEGORIES_RU;
+
+  // "featured" view: show only preview images (one per category)
+  // Category view: show all images in that category
+  const filteredImages = activeCategory === 0
+    ? IMAGES.filter((img) => img.isPreview)
+    : IMAGES.filter((img) =>
+        lang === 'en'
+          ? img.category.en === CATEGORIES_EN[activeCategory]
+          : img.category.ru === CATEGORIES_RU[activeCategory]
+      );
+
+  // Find category index by image's category name
+  const getCategoryIndex = (img: ImageItem): number => {
+    const catEN = img.category.en;
+    return CATEGORIES_EN.indexOf(catEN);
+  };
+
+  const handleImageClick = (img: ImageItem) => {
+    if (activeCategory === 0) {
+      // In "featured" view, clicking navigates to that category
+      const idx = getCategoryIndex(img);
+      if (idx > 0) setActiveCategory(idx);
+    }
+  };
+
+  // After switching tabs, make new grid items visible with a small staggered delay
+  // This fixes the bug where reveal elements stay invisible after tab switch
+  useEffect(() => {
+    const grid = gridRef.current;
+    if (!grid) return;
+
+    // Small timeout to let React render the new items
+    const timer = setTimeout(() => {
+      const items = grid.querySelectorAll('.portfolio-item');
+      items.forEach((item, i) => {
+        setTimeout(() => {
+          item.classList.add('visible');
+        }, i * 80);
+      });
+    }, 50);
+
+    return () => clearTimeout(timer);
+  }, [activeCategory]);
+
+  return (
+    <section
+      id="portfolio"
+      className="py-28 md:py-40"
+      ref={ref}
+      style={{ background: 'oklch(0.14 0.005 60)' }}
+    >
+      <div className="container">
+        {/* Header */}
+        <div className="reveal flex flex-col md:flex-row md:items-end md:justify-between gap-8 mb-16 md:mb-20">
+          <div>
+            <div className="flex items-center gap-4 mb-5">
+              <span className="deco-line" style={{ background: 'oklch(0.72 0.04 60)' }} />
+              <span className="label-editorial" style={{ color: 'oklch(0.72 0.04 60)' }}>
+                {t('Portfolio', 'Портфолио')}
+              </span>
+            </div>
+            <h2
+              className="heading-display"
+              style={{
+                fontSize: 'clamp(2.5rem, 5vw, 4rem)',
+                fontStyle: 'italic',
+                color: 'oklch(0.977 0.005 75)',
+              }}
+            >
+              {t('Selected Works', 'Избранные работы')}
+            </h2>
+          </div>
+
+          {/* Category filter */}
+          <div className="flex gap-6 flex-wrap">
+            {categories.map((cat, i) => (
+              <button
+                key={cat}
+                onClick={() => setActiveCategory(i)}
+                className="label-editorial transition-colors duration-300"
+                style={{
+                  color: activeCategory === i
+                    ? 'oklch(0.977 0.005 75)'
+                    : 'oklch(0.55 0.015 60)',
+                  borderBottom: activeCategory === i
+                    ? '1px solid oklch(0.72 0.04 60)'
+                    : '1px solid transparent',
+                  paddingBottom: '2px',
+                }}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Grid — 2 columns on desktop for every view */}
+        <div
+          ref={gridRef}
+          className="grid grid-cols-1 gap-4 md:gap-5 md:grid-cols-2"
+          style={{
+            justifyItems: 'center',
+          }}
+        >
+          {filteredImages.map((img, i) => (
+            <div
+              key={`${activeCategory}-${i}`}
+              className={`reveal portfolio-item w-full${activeCategory === 0 ? ' cursor-pointer' : ''}`}
+              style={{
+                transitionDelay: `${i * 0.12}s`,
+                aspectRatio: '3/4',
+                position: 'relative',
+              }}
+              onClick={() => handleImageClick(img)}
+            >
+              <img
+                src={img.src}
+                alt={img.alt}
+                loading="lazy"
+                style={{
+                  aspectRatio: '3/4',
+                  objectPosition: img.objectPosition || 'center center',
+                }}
+              />
+
+              {/* "View collection" overlay for featured view — visible on hover */}
+              {activeCategory === 0 && (
+                <div
+                  className="portfolio-overlay"
+                  style={{
+                    position: 'absolute',
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    padding: '2rem 1.5rem',
+                    background: 'linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 100%)',
+                    display: 'flex',
+                    alignItems: 'flex-end',
+                    justifyContent: 'space-between',
+                    pointerEvents: 'none',
+                    opacity: 0,
+                    transition: 'opacity 0.4s ease',
+                  }}
+                >
+                  <span
+                    style={{
+                      fontFamily: "'Cormorant Garamond', serif",
+                      fontSize: 'clamp(1.25rem, 2.5vw, 1.75rem)',
+                      fontStyle: 'italic',
+                      color: 'oklch(0.977 0.005 75)',
+                      fontWeight: 300,
+                    }}
+                  >
+                    {lang === 'en'
+                      ? img.category.en
+                      : img.category.ru}
+                  </span>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Hover effect for overlay */}
+      <style>{`
+        .portfolio-item:hover .portfolio-overlay {
+          opacity: 1 !important;
+        }
+      `}</style>
+    </section>
+  );
+}
